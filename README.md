@@ -13,7 +13,7 @@ rules dictate whether or not it's appropriate to light a lamp.
 # Architecture Overview
 <img src="aws.jpg" width="800"/>
 
-## Workflow
+## Flowchart
 Information flows as following:
 
 1 - Light data is gathered with the photo transistor.
