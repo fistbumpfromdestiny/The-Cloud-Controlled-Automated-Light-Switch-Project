@@ -13,7 +13,7 @@ rules dictate whether or not it's appropriate to light a lamp.
 # Architecture Overview
 <img src="aws.jpg" width="1000"/>
 
-## Flowchat
+## Flowchart
 Information flows as following:
 
 1 - Light data is gathered with the photo transistor.
@@ -39,8 +39,8 @@ set to '1'. Our device also subscribes to the topic 'esp32/+/sub' which enables 
 
 8 - The message published to the MQTT topic also triggers another rule which invokes a Lambda Function.This function queries the DynamoDB table 'sunset-sunrise-times' to see whether the sun is up or not.<br><br> If the sun has set and the light value falls below a threshold value, the function publishes a message to 'esp32/+/sub' to relay a message back to the device, which turns on the lamp. Respectively, if the sun is __up__ and the light value surpasses the threshold value, we send a message to turn the lamp __off__.<br><br>LÄGG IN LÄNK TILL PARSE_LIGHT_DATA-KOD HÄR<br><br>Information regarding sunrise and sunset times is in turn handled by:
 
-9 - An EventBridge Schedule has set to invoke a Lambda function once a day at 01:00...
+9 - An EventBridge Schedule has set to invoke a Lambda function once a day at 01:00.
 
-10 - A Lambda function makes an API call to https://api.sunrise-sunset.org with the coordinates of the device to gather the times for the sunrise and sunset of the current day and saves it in the DynamoDB table being used in section 8.<br><br>LÄGG IN LÄNK TILL GET_SUN_INFO_KOD HÄR
+10+11 - A Lambda function makes an API call to https://api.sunrise-sunset.org with the coordinates of the device to gather the times for the sunrise and sunset of the current day and saves it in the DynamoDB table being used in section 8.<br><br>LÄGG IN LÄNK TILL GET_SUN_INFO_KOD HÄR
 
-11
+12 - An API Gateway is setup to enable RESTful APIs for external information retrieval regarding collected light source data or the current state (on or off) of individual or collective lamps.
