@@ -45,5 +45,5 @@ set to '1'. Our device also subscribes to the topic 'esp32/+/sub' which enables 
 
 12 - An API Gateway is setup to enable RESTful APIs for external information retrieval regarding collected light source data or the current state (on or off) of individual or collective lamps.
 
-#License
+# License
 This project is licensed under the MIT License.
