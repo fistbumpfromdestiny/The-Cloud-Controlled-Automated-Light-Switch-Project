@@ -10,3 +10,5 @@ rules dictate whether or not it's appropriate to light a lamp.
 - The project uses an ESP32-C3-DevKitM-1 development board to gather, send and receive data over
   Wi-Fi to an MQTT topic in AWS IoT Core. An MCL053GD LED acts as a lamp.
 
+# Architecture Overview
+<img src="aws.jpg" width="800"/>
