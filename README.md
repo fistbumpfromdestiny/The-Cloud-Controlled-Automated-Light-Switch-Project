@@ -21,7 +21,7 @@ Information flows as following:
 2 - The ESP32 (or the device) averages the light data gathered over 10 seconds and sends the data 
     to AWS IoT Core 
     over MQTTS. The ESP32 also receives data back from AWS upon which it acts. It can either turn
-    lamp on or off.<br><br>See the code for the ESP32 [here]()
+    lamp on or off.<br><br>See the code for the ESP32 [here](https://github.com/fistbumpfromdestiny/The-Cloud-Controlled-Automated-Light-Switch-Project/blob/main/code.org#esp32https://github.com/fistbumpfromdestiny/The-Cloud-Controlled-Automated-Light-Switch-Project/blob/main/code.org#esp32).
 
 3 - The lamp. It gets turned on and off by the ESP32.
 
@@ -37,10 +37,10 @@ set to '1'. Our device also subscribes to the topic 'esp32/+/sub' which enables 
 
 7 - The data from the device (id, light value, on or off) is saved in a DynamoDB table, with a Time To Live currently set to 30 days. After 30 days the data is trasferred to an S3 Bucket to eventually be archived in an S3 Glacier.
 
-8 - The message published to the MQTT topic also triggers another rule which invokes a Lambda Function.This function queries the DynamoDB table 'sunset-sunrise-times' to see whether the sun is up or not.<br><br> If the sun has set and the light value falls below a threshold value, the function publishes a message to 'esp32/+/sub' to relay a message back to the device, which turns on the lamp. Respectively, if the sun is __up__ and the light value surpasses the threshold value, we send a message to turn the lamp __off__.<br><br>See the code for this Lambda function [here]()<br><br>Information regarding sunrise and sunset times is in turn handled by:
+8 - The message published to the MQTT topic also triggers another rule which invokes a Lambda Function.This function queries the DynamoDB table 'sunset-sunrise-times' to see whether the sun is up or not.<br><br> If the sun has set and the light value falls below a threshold value, the function publishes a message to 'esp32/+/sub' to relay a message back to the device, which turns on the lamp. Respectively, if the sun is __up__ and the light value surpasses the threshold value, we send a message to turn the lamp __off__.<br><br>See the code for this Lambda function [here](https://github.com/fistbumpfromdestiny/The-Cloud-Controlled-Automated-Light-Switch-Project/blob/main/code.org#lambda-function-parse_light_data).<br><br>Information regarding sunrise and sunset times is in turn handled by:
 
 9 - An EventBridge Schedule has set to invoke a Lambda function once a day at 01:00.
 
-10+11 - A Lambda function makes an API call to https://api.sunrise-sunset.org with the coordinates of the device to gather the times for the sunrise and sunset of the current day and saves it in the DynamoDB table being used in section 8.<br><br>See the code for this Lambda function [here]()
+10+11 - A Lambda function makes an API call to https://api.sunrise-sunset.org with the coordinates of the device to gather the times for the sunrise and sunset of the current day and saves it in the DynamoDB table being used in section 8.<br><br>See the code for this Lambda function [here](https://github.com/fistbumpfromdestiny/The-Cloud-Controlled-Automated-Light-Switch-Project/blob/main/code.org#lambda-function-get_sun_info).
 
 12 - An API Gateway is setup to enable RESTful APIs for external information retrieval regarding collected light source data or the current state (on or off) of individual or collective lamps.
