@@ -1,0 +1,247 @@
+:PROPERTIES:
+:ID:       696e2fd0-c3fa-420c-aef8-fb817f54e929
+:END:
+#+title: cloud_project_code
+* ESP32
+ 
+#+begin_src C++
+  #include "secrets.h"
+  #include <WiFiClientSecure.h>
+  #include <PubSubClient.h>
+  #include <ArduinoJson.h>
+  #include "WiFi.h"
+
+  #define LIGHT 4     // Digital pin connected to the photo transistor
+  #define PERIOD 10000
+
+  #define AWS_IOT_PUBLISH_TOPIC   "esp32/1/pub"
+  #define AWS_IOT_SUBSCRIBE_TOPIC "esp32/1/sub"
+
+  #define DEVICE_ID 1
+
+  bool lightState = false;
+  unsigned long lightValue, measurementCounter;
+  unsigned long startMillis, currentMillis;
+
+  WiFiClientSecure net = WiFiClientSecure();
+  PubSubClient client(net);
+
+  void connectAWS()
+  {
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+    Serial.println("Connecting to Wi-Fi");
+
+    while (WiFi.status() != WL_CONNECTED)
+    {
+      delay(500);
+      Serial.print(".");
+    }
+
+    // Configure WiFiClientSecure to use the AWS IoT device credentials
+    net.setCACert(AWS_CERT_CA);
+    net.setCertificate(AWS_CERT_CRT);
+    net.setPrivateKey(AWS_CERT_PRIVATE);
+
+    // Connect to the MQTT broker on the AWS endpoint we defined earlier
+    client.setServer(AWS_IOT_ENDPOINT, 8883);
+
+    // Create a message handler
+    client.setCallback(messageHandler);
+
+    Serial.println("Connecting to AWS IOT");
+     while (!client.connect(THINGNAME))
+    {
+      Serial.print(".");
+      delay(100);
+    }
+
+    if (!client.connected())
+    {
+      Serial.println("AWS IoT Timeout!");
+      return;
+    }
+
+    // Subscribe to a topic
+    client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC);
+
+    Serial.println("AWS IoT Connected!");
+  }
+
+  void publishMessage()
+  {
+    StaticJsonDocument<200> doc;
+    doc["deviceId"] = DEVICE_ID;
+    doc["lightValue"] = lightValue;
+    doc["lightIsOn"] = lightState;
+    char jsonBuffer[512];
+    serializeJson(doc, jsonBuffer); // print to client
+
+    client.publish(AWS_IOT_PUBLISH_TOPIC, jsonBuffer);
+  }
+
+  void messageHandler(char* topic, byte* payload, unsigned int length)
+  {
+    Serial.print("incoming: ");
+    Serial.println(topic);
+
+    StaticJsonDocument<200> doc;
+    deserializeJson(doc, payload);
+    const char* message = doc["message"];
+    Serial.println(message);
+    handleLamp(message);
+  }
+
+  void handleLamp(const char* cmd) {
+    if(*cmd == '0'){          
+      digitalWrite(7, LOW);
+      lightState = false;
+    }
+    else if(*cmd == '1'){
+      digitalWrite(7, HIGH);
+      lightState = true;
+    }
+    else Serial.println("Can't parse that command.");
+  }
+
+  void setup()
+  {
+    analogReadResolution(12);
+    pinMode(7, OUTPUT);
+    Serial.begin(115200);
+    connectAWS();
+  }
+
+  void loop() {
+
+    currentMillis = millis();
+
+
+    lightValue += analogRead(LIGHT);
+    Serial.println(lightValue);
+    measurementCounter++;
+    if (currentMillis - startMillis >= PERIOD) {
+      lightValue = lightValue / measurementCounter;
+      publishMessage();
+      lightValue = 0;
+      measurementCounter = 0;
+      startMillis = currentMillis;
+    }
+    client.loop();
+  }
+
+#+end_src
+* AWS
+** Lambda Function "parse_light_data"
+
+#+begin_src python
+
+  import boto3
+  import json
+  from datetime import datetime, timedelta
+
+  def lambda_handler(event, context):
+    
+      respond_msg = None
+    
+      #Dynamo
+      dynamodb = boto3.resource('dynamodb')
+      table = dynamodb.Table('sunset-sunrise-times')
+    
+      date = datetime.strftime(datetime.today(),"%Y-%m-%d")
+      hour = datetime.strftime(datetime.today(),"%H:%M:%S")
+      hour_time = datetime.strptime(hour, "%H:%M:%S")
+      hour_time += timedelta(hours=1)
+      hour = datetime.strftime(hour_time,"%H:%M:%S")
+    
+      # Get the date and time from the table
+      db_response = table.get_item(Key={'date': date})
+      date = db_response['Item']['date']
+      sunrise = db_response['Item']['sunrise']
+      sunset = db_response['Item']['sunset']
+    
+      sun_is_up = sunrise < hour < sunset
+
+      #MQTT
+      client = boto3.client('iot-data', region_name='eu-north-1')
+
+      # Format text message from data
+      device_id = int(event['deviceId'])
+      print(device_id)
+      light_value = int(event['lightValue'])
+      light_is_on = bool(event['lightIsOn'])
+    
+      if light_is_on == True:
+          respond_msg = "1" 
+      else: 
+          respond_msg = "0"
+    
+      if light_value > 50 and sun_is_up and light_is_on:
+          respond_msg = "0"
+      elif light_value < 50 and not sun_is_up and not light_is_on:
+          respond_msg = "1"
+
+      response = client.publish(
+          topic='esp32/'+str(device_id)+'/sub',
+          qos=1,
+          payload=json.dumps({"message":respond_msg})
+      )
+  
+#+end_src
+
+** Lambda Function "get_sun_info"
+
+#+begin_src python
+
+  from botocore.vendored import requests
+  import boto3
+  from datetime import datetime, timedelta
+
+  def lambda_handler(event, context):
+      # Make the API call to https://api.sunrise-sunset.org/
+      response = requests.get("https://api.sunrise-sunset.org/json?lat=59.314152706401735&lng=18.0885061699422&date=today")
+
+      # Save the result as a JSON object
+      result = response.json()
+
+      # Save the sunrise and sunset times from the result
+      sunrise = result["results"]["sunrise"]
+      sunset = result["results"]["sunset"]
+
+      # Parse the sunrise and sunset times as datetime objects
+      sunrise_time = datetime.strptime(sunrise, "%I:%M:%S %p")
+      sunset_time = datetime.strptime(sunset, "%I:%M:%S %p")
+
+      # Add one hour to the sunrise and sunset times
+      sunrise_time += timedelta(hours=1)
+      sunset_time += timedelta(hours=1)
+
+      # Format the updated sunrise and sunset times as strings
+      sunrise = sunrise_time.strftime("%H:%M:%S")
+      sunset = sunset_time.strftime("%H:%M:%S")
+
+      # Create a DynamoDB client
+      client = boto3.client('dynamodb')
+    
+      today = datetime.today()
+      date_str = today.strftime('%Y-%m-%d')
+    
+      date_str = str(date_str)
+
+      # Save the updated sunrise and sunset times in the table
+      client.put_item(TableName='sunset-sunrise-times',
+          Item={
+              'date': {
+              'S': date_str
+              },
+              'sunrise': {
+              'S': sunrise
+              },
+              'sunset': {
+              'S': sunset
+              }
+          }
+      )
+
+#+end_src
