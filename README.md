@@ -31,9 +31,6 @@ Information flows as following:
 5 - Messages is being sent to an MQTT Topic in AWS's IoT Core. In this case our device sends (or
     publishes) messages to the topic 'esp32/+/pub' where the + character is a wildcard for our 
     devices' unique ID. Since we're only operating one device in this PoC, the device ID has been
-    set to '1'.
+    set to '1'. Our device also subscribes to the topic 'esp32/+/sub' which enables it to receive messages or commands which to act upon.
 
-    Our device also subscribes to the topic 'esp32/+/sub' which enables it to receive messages or 
-    commands which to act upon.
-    
 6 - Whenever a message has been received 
