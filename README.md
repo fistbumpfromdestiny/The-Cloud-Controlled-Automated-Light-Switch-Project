@@ -11,7 +11,7 @@ rules dictate whether or not it's appropriate to light a lamp.
   Wi-Fi to an MQTT topic in AWS IoT Core. An MCL053GD LED acts as a lamp.
 
 # Architecture Overview
-<img src="aws.jpg" width="800"/>
+<img src="aws.jpg" width="1000"/>
 
 ## Workflow
 Information flows as following:
@@ -35,4 +35,4 @@ set to '1'. Our device also subscribes to the topic 'esp32/+/sub' which enables 
 
 6 - Whenever a message has been published to 'esp32/+/pub' a message routing _rule_ is triggered.
 
-7 - 
+7 - The data from the device (id, light value, on or off) is saved in a DynamoDB table, with a Time To Live currently set to 30 days. After 30 days the data is trasferred
