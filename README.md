@@ -44,3 +44,6 @@ set to '1'. Our device also subscribes to the topic 'esp32/+/sub' which enables 
 10+11 - A Lambda function makes an API call to https://api.sunrise-sunset.org with the coordinates of the device to gather the times for the sunrise and sunset of the current day and saves it in the DynamoDB table being used in section 8.<br><br>See the code for this Lambda function [here](https://github.com/fistbumpfromdestiny/The-Cloud-Controlled-Automated-Light-Switch-Project/blob/main/code.org#lambda-function-get_sun_info).
 
 12 - An API Gateway is setup to enable RESTful APIs for external information retrieval regarding collected light source data or the current state (on or off) of individual or collective lamps.
+
+#License
+This project is licensed under the MIT License.
