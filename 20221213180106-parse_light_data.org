@@ -1,0 +1,60 @@
+:PROPERTIES:
+:ID:       696e2fd0-c3fa-420c-aef8-fb817f54e929
+:END:
+#+title: aws_lambda_code
+
+* Lambda Function "parse_light_data"
+
+#+begin_src python
+import boto3
+import json
+from datetime import datetime, timedelta
+
+def lambda_handler(event, context):
+    
+    respond_msg = None
+    
+    #Dynamo
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('sunset-sunrise-times')
+    
+    date = datetime.strftime(datetime.today(),"%Y-%m-%d")
+    hour = datetime.strftime(datetime.today(),"%H:%M:%S")
+    hour_time = datetime.strptime(hour, "%H:%M:%S")
+    hour_time += timedelta(hours=1)
+    hour = datetime.strftime(hour_time,"%H:%M:%S")
+    
+    # Get the date and time from the table
+    db_response = table.get_item(Key={'date': date})
+    date = db_response['Item']['date']
+    sunrise = db_response['Item']['sunrise']
+    sunset = db_response['Item']['sunset']
+    
+    sun_is_up = sunrise < hour < sunset
+
+    #MQTT
+    client = boto3.client('iot-data', region_name='eu-north-1')
+
+    # Format text message from data
+    device_id = int(event['deviceId'])
+    print(device_id)
+    light_value = int(event['lightValue'])
+    light_is_on = bool(event['lightIsOn'])
+    
+    if light_is_on == True:
+        respond_msg = "1" 
+    else: 
+        respond_msg = "0"
+    
+    if light_value > 50 and sun_is_up and light_is_on:
+        respond_msg = "0"
+    elif light_value < 50 and not sun_is_up and not light_is_on:
+        respond_msg = "1"
+
+    response = client.publish(
+        topic='esp32/'+str(device_id)+'/sub',
+        qos=1,
+        payload=json.dumps({"message":respond_msg})
+    )
+  
+#+end_src
