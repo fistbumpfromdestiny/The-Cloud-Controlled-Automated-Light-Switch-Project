@@ -37,5 +37,4 @@ set to '1'. Our device also subscribes to the topic 'esp32/+/sub' which enables 
 
 7 - The data from the device (id, light value, on or off) is saved in a DynamoDB table, with a Time To Live currently set to 30 days. After 30 days the data is trasferred to an S3 Bucket to eventually be archived in an S3 Glacier.
 
-8 - The message published to the MQTT topic also triggers another rule which invokes a Lambda Function.This function queries the DynamoDB table 'sunset-sunrise-times' to see whether the sun is up or not. If
-the sun has set and the light value falls below a threshold value, the function publishes a message to 'esp32/+/sub' to relay a message back to the device, which turns on the lamp. Respectively, if the is __up__ and the light value surpasses the threshold value, we send a message to turn the lamp __off__.  
+8 - The message published to the MQTT topic also triggers another rule which invokes a Lambda Function.This function queries the DynamoDB table 'sunset-sunrise-times' to see whether the sun is up or not.<br><br> If the sun has set and the light value falls below a threshold value, the function publishes a message to 'esp32/+/sub' to relay a message back to the device, which turns on the lamp. Respectively, if the is __up__ and the light value surpasses the threshold value, we send a message to turn the lamp __off__.  
