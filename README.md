@@ -13,7 +13,7 @@ rules dictate whether or not it's appropriate to light a lamp.
 # Architecture Overview
 <img src="aws.jpg" width="800"/>
 
-## Flowchart
+## Workflow
 Information flows as following:
 
 1 - Light data is gathered with the photo transistor.
@@ -28,9 +28,11 @@ Information flows as following:
 4 - MQTT, a network procotol for Message Queuing. It's used to enable the ESP32 to communicate with 
     AWS Cloud Services. 
 
-5 - Messages is being sent to an MQTT Topic in AWS's IoT Core. In this case our device sends (or
-    publishes) messages to the topic 'esp32/+/pub' where the + character is a wildcard for our 
-    devices' unique ID. Since we're only operating one device in this PoC, the device ID has been
-    set to '1'. Our device also subscribes to the topic 'esp32/+/sub' which enables it to receive messages or commands which to act upon.
+5 - Messages is being sent to an MQTT Topic in AWS's IoT Core, containing information about the           device's ID, light strength and the current lamp state (on or off). In this case our device sends (or
+publishes) messages to the topic 'esp32/+/pub' where the + character is a wildcard for our 
+devices' unique ID. Since we're only operating one device in this PoC, the device ID has been
+set to '1'. Our device also subscribes to the topic 'esp32/+/sub' which enables it to receive messages or commands which to act upon.
 
-6 - Whenever a message has been received 
+6 - Whenever a message has been published to 'esp32/+/pub' a message routing _rule_ is triggered.
+
+7 - 
