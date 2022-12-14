@@ -47,8 +47,13 @@ set to '1'. Our device also subscribes to the topic 'esp32/+/sub' which enables 
 
 # Visualization
 
-Data is made visible through AWS QuickSight for visualization and analysis regarding the gathered data.
+Data is made visible through AWS QuickSight for visualization and analysis regarding the gathered data, e.g:<br>
+
+Average strength of light over a chosen time period.
+
 <img src="qs1.png" width="500"/>
+
+State of lamped, how often is it on and off?
 
 <img src="qs2.png" width="500"/>
 
