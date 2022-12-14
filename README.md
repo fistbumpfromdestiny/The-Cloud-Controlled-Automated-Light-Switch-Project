@@ -57,6 +57,12 @@ State of lamped, how often is it on and off?
 
 <img src="qs2.png" width="500"/>
 
+# Regarding security
+
+Security is currently handled by hardcoding the certificates on the device. This is obviously not viable for 
+a production environment with hundreds or even thousands of devices, where using a service such as AWS KMS 
+would be appropriate.
+
 # License
 This project is licensed under the MIT License.
 
